@@ -1,4 +1,4 @@
-package com.previred.empleados;
+package com.previred.empleados.usuarioModel;
 /**
  * Entidad de dominio que representa un Empleado en el sistema.
  * Mapea directamente a la tabla 'empleados' de la base de datos H2.

@@ -1,5 +1,6 @@
 package com.previred.empleados.repository;
 
+import org.springframework.stereotype.Repository;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,7 +12,7 @@ import java.util.Optional;
 
 import javax.sql.DataSource;
 
-import com.previred.empleados.Empleado;
+import com.previred.empleados.usuarioModel.Empleado;
 
 @Repository
 public class EmpleadoRepository {
