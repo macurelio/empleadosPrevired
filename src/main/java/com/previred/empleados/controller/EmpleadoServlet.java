@@ -2,7 +2,7 @@ package com.previred.empleados.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.previred.empleados.dto.EmpleadoDTO;
-
+import com.previred.empleados.messageError.ErrorResponse;
 import com.previred.empleados.service.EmpleadoService;
 
 import javax.servlet.http.HttpServlet;
@@ -49,13 +49,13 @@ public class EmpleadoServlet extends HttpServlet {
         try {
             if (pathInfo == null || pathInfo.equals("/")) {
                 // GET /api/empleados → listar todos
-                List<EmpleadoDTO> empleados = empleadoService.listarTodos();
+                List<EmpleadoDTO> empleados = empleadoService.listAllEmployees();
                 resp.setStatus(HttpServletResponse.SC_OK);
                 objectMapper.writeValue(resp.getOutputStream(), empleados);
             } else {
                 // GET /api/empleados/{id}
-                Long id = extraerIdDePath(pathInfo);
-                empleadoService.buscarPorId(id)
+                Long id = extractIdFromPath(pathInfo);
+                empleadoService.findById(id)
                         .map(dto -> {
                             try {
                                 resp.setStatus(HttpServletResponse.SC_OK);
@@ -66,18 +66,18 @@ public class EmpleadoServlet extends HttpServlet {
                             return dto;
                         })
                         .orElseGet(() -> {
-                            enviarError(resp, HttpServletResponse.SC_NOT_FOUND,
+                            sendError(resp, HttpServletResponse.SC_NOT_FOUND,
                                     "No encontrado",
                                     Collections.singletonList("Empleado con ID " + id + " no encontrado."));
                             return null;
                         });
             }
         } catch (NumberFormatException e) {
-            enviarError(resp, HttpServletResponse.SC_BAD_REQUEST,
+            sendError(resp, HttpServletResponse.SC_BAD_REQUEST,
                     "ID inválido",
                     Collections.singletonList("El ID proporcionado no es un número válido."));
         } catch (Exception e) {
-            enviarError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Error interno",
                     Collections.singletonList(e.getMessage()));
         }
@@ -93,31 +93,31 @@ public class EmpleadoServlet extends HttpServlet {
         resp.setCharacterEncoding("UTF-8");
 
         try {
-            String body = leerBody(req);
+            String body = readBody(req);
 
             if (body == null || body.trim().isEmpty()) {
-                enviarError(resp, HttpServletResponse.SC_BAD_REQUEST,
+                sendError(resp, HttpServletResponse.SC_BAD_REQUEST,
                         "Cuerpo vacío",
                         Collections.singletonList("El cuerpo de la solicitud no puede estar vacío."));
                 return;
             }
 
             EmpleadoDTO dto = objectMapper.readValue(body, EmpleadoDTO.class);
-            EmpleadoDTO creado = empleadoService.crearEmpleado(dto);
+            EmpleadoDTO creado = empleadoService.createEmployee(dto);
 
             resp.setStatus(HttpServletResponse.SC_CREATED);
             objectMapper.writeValue(resp.getOutputStream(), creado);
 
-        } catch (EmpleadoService.ValidacionException e) {
-            enviarError(resp, HttpServletResponse.SC_BAD_REQUEST,
+        } catch (EmpleadoService.ValidationException e) {
+            sendError(resp, HttpServletResponse.SC_BAD_REQUEST,
                     "Errores de validación",
                     e.getErrores());
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-            enviarError(resp, HttpServletResponse.SC_BAD_REQUEST,
+            sendError(resp, HttpServletResponse.SC_BAD_REQUEST,
                     "JSON inválido",
                     Collections.singletonList("El formato del JSON enviado es inválido: " + e.getOriginalMessage()));
         } catch (Exception e) {
-            enviarError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Error interno",
                     Collections.singletonList(e.getMessage()));
         }
@@ -136,13 +136,13 @@ public class EmpleadoServlet extends HttpServlet {
 
         try {
             if (pathInfo == null || pathInfo.equals("/")) {
-                enviarError(resp, HttpServletResponse.SC_BAD_REQUEST,
+                sendError(resp, HttpServletResponse.SC_BAD_REQUEST,
                         "ID requerido",
                         Collections.singletonList("Debe proporcionar el ID del empleado a eliminar."));
                 return;
             }
 
-            Long id = extraerIdDePath(pathInfo);
+            Long id = extractIdFromPath(pathInfo);
             boolean eliminado = empleadoService.eliminarEmpleado(id);
 
             if (eliminado) {
@@ -150,16 +150,16 @@ public class EmpleadoServlet extends HttpServlet {
                 objectMapper.writeValue(resp.getOutputStream(),
                         Collections.singletonMap("mensaje", "Empleado con ID " + id + " eliminado exitosamente."));
             } else {
-                enviarError(resp, HttpServletResponse.SC_NOT_FOUND,
+                sendError(resp, HttpServletResponse.SC_NOT_FOUND,
                         "No encontrado",
                         Collections.singletonList("Empleado con ID " + id + " no encontrado."));
             }
         } catch (NumberFormatException e) {
-            enviarError(resp, HttpServletResponse.SC_BAD_REQUEST,
+            sendError(resp, HttpServletResponse.SC_BAD_REQUEST,
                     "ID inválido",
                     Collections.singletonList("El ID proporcionado no es un número válido."));
         } catch (Exception e) {
-            enviarError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Error interno",
                     Collections.singletonList(e.getMessage()));
         }
@@ -176,12 +176,12 @@ public class EmpleadoServlet extends HttpServlet {
 
     // --- Métodos utilitarios ---
 
-    private Long extraerIdDePath(String pathInfo) {
+    private Long extractIdFromPath(String pathInfo) {
         String idStr = pathInfo.substring(1); // Quita el '/' inicial
         return Long.parseLong(idStr);
     }
 
-    private String leerBody(HttpServletRequest req) throws IOException {
+    private String readBody(HttpServletRequest req) throws IOException {
         StringBuilder sb = new StringBuilder();
         try (BufferedReader reader = req.getReader()) {
             String line;
@@ -192,10 +192,10 @@ public class EmpleadoServlet extends HttpServlet {
         return sb.toString();
     }
 
-    private void enviarError(HttpServletResponse resp, int status, String mensaje, List<String> errores) {
+    private void sendError(HttpServletResponse resp, int status, String mensaje, List<String> errores) {
         try {
             resp.setStatus(status);
-            ErrorResponse errorResponse = new ErrorResponse();
+            ErrorResponse errorResponse = new ErrorResponse(status, mensaje, errores);
             objectMapper.writeValue(resp.getOutputStream(), errorResponse);
         } catch (IOException e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

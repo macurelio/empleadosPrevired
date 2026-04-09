@@ -32,7 +32,7 @@ public class EmpleadoService {
     /**
      * Lista todos los empleados y los convierte a DTO.
      */
-    public List<EmpleadoDTO> listarTodos() {
+    public List<EmpleadoDTO> listAllEmployees() {
         return empleadoRepository.findAll()
                 .stream()
                 .map(this::toDTO)
@@ -42,7 +42,7 @@ public class EmpleadoService {
     /**
      * Busca un empleado por ID y lo retorna como DTO.
      */
-    public Optional<EmpleadoDTO> buscarPorId(Long id) {
+    public Optional<EmpleadoDTO> findById(Long id) {
         return empleadoRepository.findById(id)
                 .map(this::toDTO);
     }
@@ -54,11 +54,11 @@ public class EmpleadoService {
      * @return DTO del empleado creado
      * @throws ValidacionException si alguna regla de negocio falla
      */
-    public EmpleadoDTO crearEmpleado(EmpleadoDTO dto) {
-        List<String> errores = validar(dto);
+    public EmpleadoDTO createEmployee(EmpleadoDTO dto) {
+        List<String> errores = validate(dto);
 
         if (!errores.isEmpty()) {
-            throw new ValidacionException(errores);
+            throw new ValidationException(errores);
         }
 
         Empleado empleado = toEntity(dto);
@@ -88,11 +88,11 @@ public class EmpleadoService {
      *   6. Valores numéricos no negativos.
      *   7. RUT/DNI no duplicado en la base de datos.
      */
-    private List<String> validar(EmpleadoDTO dto) {
+    private List<String> validate(EmpleadoDTO dto) {
         List<String> errores = new ArrayList<>();
 
         // ── Campos obligatorios ──────────────────────────────────────────
-        validarCamposObligatorios(dto, errores);
+        validateRequiredFields(dto, errores);
 
         // ── Formato de RUT (defensa en profundidad — el frontend también valida) ──
         if (dto.getRut() != null && !dto.getRut().trim().isEmpty()) {
@@ -143,7 +143,7 @@ public class EmpleadoService {
      * Valida que todos los campos obligatorios estén presentes.
      * Usa un enfoque funcional con Streams para iterar las validaciones.
      */
-    private void validarCamposObligatorios(EmpleadoDTO dto, List<String> errores) {
+    private void validateRequiredFields(EmpleadoDTO dto, List<String> errores) {
         // Pares: (valor, nombre del campo) — validación funcional con Streams
         java.util.Map<String, String> campos = new java.util.LinkedHashMap<>();
         campos.put("nombre", dto.getNombre());
@@ -192,11 +192,11 @@ public class EmpleadoService {
     /**
      * Excepción personalizada para errores de validación de negocio.
      */
-    public static class ValidacionException extends RuntimeException {
+    public static class ValidationException extends RuntimeException {
 
         private final List<String> errores;
 
-        public ValidacionException(List<String> errores) {
+        public ValidationException(List<String> errores) {
             super("Errores de validación: " + String.join(", ", errores));
             this.errores = errores;
         }
