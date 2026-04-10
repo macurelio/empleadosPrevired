@@ -52,7 +52,7 @@ public class EmpleadoService {
      *
      * @param dto datos del empleado a crear
      * @return DTO del empleado creado
-     * @throws ValidacionException si alguna regla de negocio falla
+     * @throws ValidationException si alguna regla de negocio falla
      */
     public EmpleadoDTO createEmployee(EmpleadoDTO dto) {
         List<String> errores = validate(dto);
@@ -173,7 +173,6 @@ public class EmpleadoService {
         dto.setSalarioBase(empleado.getSalarioBase());
         dto.setBonificaciones(empleado.getBonificaciones());
         dto.setDescuentos(empleado.getDescuentos());
-        dto.setSalarioBase(empleado.getSalarioLiquido());
         return dto;
     }
 
