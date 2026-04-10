@@ -5,7 +5,7 @@ import java.sql.*;
 public class CreateDB {
 
         // Tu cadena de conexión
-        private static final String URL = "jdbc:h2:mem:empleadosdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE";
+        private static final String URL = "jdbc:mysql://localhost:3306/empleadosdb?useSSL=false&serverTimezone=America/Santiago&allowPublicKeyRetrieval=true";
         private static final String USER = "root";
         private static final String PASSWORD = "admin";
 
